@@ -1,0 +1,45 @@
+services:
+  ipsec-left:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ipsec-left
+    hostname: left
+    privileged: true
+    environment:
+      LAB_SIDE: left
+    networks:
+      ipsec_outer:
+        ipv4_address: 172.30.0.2
+        ipv6_address: fd00:30::2
+    volumes:
+      - ./configs:/lab/configs:ro
+    restart: "no"
+
+  ipsec-right:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ipsec-right
+    hostname: right
+    privileged: true
+    environment:
+      LAB_SIDE: right
+    networks:
+      ipsec_outer:
+        ipv4_address: 172.30.0.3
+        ipv6_address: fd00:30::3
+    volumes:
+      - ./configs:/lab/configs:ro
+      - ./lab-data:/srv/data
+    restart: "no"
+
+networks:
+  ipsec_outer:
+    name: ipsec_outer
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+        - subnet: fd00:30::/64
