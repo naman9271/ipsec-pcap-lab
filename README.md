@@ -1,5 +1,7 @@
 # IPsec PCAP lab dataset
 
+See [DATASET.md](DATASET.md) for the authoritative dataset schema, provenance, completion gate, and reproduction instructions.
+
 This repository is a reproducible, two-container strongSwan lab for collecting **outer-side encrypted IPsec PCAPs**. It preserves the 20 original captures in `pcaps/` exactly as supplied and extends them with independently generated samples. PCAPs are not decoded or modified after capture.
 
 ## One-command dataset run

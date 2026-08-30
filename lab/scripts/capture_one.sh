@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CLASS="${1:?Usage: $0 CLASS PROFILE RUN}"; PROFILE="${2:?}"; RUN="${3:?Run must be R01/R02}"
+CLASS="${1:?Usage: $0 CLASS PROFILE RUN}"; PROFILE="${2:?}"; RUN="${3:?Run must be R01-R05}"
 case "$CLASS" in web|video|file_transfer|icmp|email|messaging|voip) ;; *) echo 'Invalid known class' >&2; exit 2;; esac
-[[ "$PROFILE" =~ ^[1-5]$ && "$RUN" =~ ^R0[12]$ ]] || { echo 'profile 1-5 and run R01/R02 required' >&2; exit 2; }
+[[ "$PROFILE" =~ ^[1-5]$ && "$RUN" =~ ^R0[1-5]$ ]] || { echo 'profile 1-5 and run R01-R05 required' >&2; exit 2; }
 DEST="$ROOT/pcaps/known/$CLASS/${CLASS}_p$(printf '%02d' "$PROFILE")_${RUN}.pcap"; TMP="${DEST}.partial"; mkdir -p "$(dirname "$DEST")"
 [[ ! -e "$DEST" ]] || { echo "Refusing to overwrite $DEST" >&2; exit 3; }
 rm -f "$TMP"  # An interrupted prior attempt is never a usable sample.

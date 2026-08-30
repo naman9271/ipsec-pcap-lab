@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Small dependency-free reader for classic libpcap captures."""
 import hashlib, struct
+import datetime as dt
 from pathlib import Path
 
 def inspect(path):
@@ -10,11 +11,11 @@ def inspect(path):
     fmt = {b'\xd4\xc3\xb2\xa1':'<', b'\xa1\xb2\xc3\xd4':'>', b'M<\xb2\xa1':'<', b'\xa1\xb2<M':'>'}.get(magic)
     if not fmt: raise ValueError('unsupported capture format (expected classic pcap)')
     linktype = struct.unpack(fmt+'I', data[20:24])[0]
-    off, count, first, last, esp, natt = 24, 0, None, None, 0, 0
+    off, count, first, last, frame_bytes, esp, natt = 24, 0, None, None, 0, 0, 0
     while off + 16 <= len(data):
         sec, frac, incl, orig = struct.unpack(fmt+'IIII', data[off:off+16]); off += 16
         if off + incl > len(data): raise ValueError('truncated packet record')
-        pkt = data[off:off+incl]; off += incl; count += 1
+        pkt = data[off:off+incl]; off += incl; count += 1; frame_bytes += orig
         stamp = sec + frac / (1_000_000_000 if magic in (b'M<\xb2\xa1', b'\xa1\xb2<M') else 1_000_000)
         first = stamp if first is None else first; last = stamp
         # Ethernet/VLAN, outer IPv4/IPv6 protocol; enough for validator assertions.
@@ -29,4 +30,15 @@ def inspect(path):
                 hlen = (pkt[pos] & 15)*4 if et == 0x0800 else 40
                 if len(pkt) >= pos+hlen+4 and 4500 in struct.unpack('!HH', pkt[pos+hlen:pos+hlen+4]): natt += 1
     if off != len(data): raise ValueError('trailing partial packet header')
-    return {'packet_count':count, 'captured_bytes':len(data), 'observed_packet_span_s':round((last-first) if first is not None else 0, 6), 'link_type':linktype, 'esp_packets':esp, 'udp4500_packets':natt, 'sha256':hashlib.sha256(data).hexdigest()}
+    started = dt.datetime.fromtimestamp(first, dt.timezone.utc).isoformat() if first is not None else ''
+    ended = dt.datetime.fromtimestamp(last, dt.timezone.utc).isoformat() if last is not None else ''
+    return {
+        'packet_count': count,
+        # captured_bytes is retained for callers supporting the legacy schema.
+        'captured_bytes': len(data), 'pcap_file_size_bytes': len(data),
+        'captured_frame_bytes': frame_bytes,
+        'capture_started_at_utc': started, 'capture_ended_at_utc': ended,
+        'observed_packet_span_s': round((last-first) if first is not None else 0, 6),
+        'link_type': linktype, 'esp_packets': esp, 'udp4500_packets': natt,
+        'sha256': hashlib.sha256(data).hexdigest(),
+    }
