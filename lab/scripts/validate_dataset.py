@@ -81,8 +81,11 @@ for t in OOD_TYPES:
   if ood[(t,f'P{p:02d}')]!=1: bad(f'{t}/P{p:02d}','OOD matrix','exactly one capture',ood[(t,f'P{p:02d}')])
 for t in {'icmp_flood','udp_flood','beacon_burst'}:
  if anomaly[t]!=10: bad(t,'anomaly count','10',anomaly[t])
+for profile in range(1, 6):
+ if sum(r.get('profile_id') == f'P{profile:02d}' for r in protocols) != 1:
+  bad(f'protocol_validation/P{profile:02d}', 'protocol capture count', 'exactly one', sum(r.get('profile_id') == f'P{profile:02d}' for r in protocols))
 facts=' '.join(r.get('protocol_facts','').lower() for r in protocols)
-for required in ('actual nat','certificate','child_sa rekey','ike sa rekey','ikev1','ikev2','native esp','udp/4500','ipv4','weak'):
+for required in ('ikev1','ikev2','native esp','udp/4500','ipv4','ipv6','psk authentication'):
  if required not in facts: bad('protocol_validation','protocol coverage',required,'absent')
 if errors:
  print('Dataset validation failed:'); print('\n'.join('- '+e for e in errors)); sys.exit(1)

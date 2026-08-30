@@ -35,8 +35,21 @@ capture_profile() {
   sudo kill "$pid" >/dev/null 2>&1 || true
   wait "$pid" >/dev/null 2>&1 || true
   pid=''
+  local expected_outer facts
+  case "$p" in
+    1) expected_outer=esp; facts='IKEv2; native ESP; IPv4; PSK authentication' ;;
+    2) expected_outer=udp4500; facts='IKEv2; UDP/4500; IPv4; forced encapsulation; PSK authentication' ;;
+    3) expected_outer=esp; facts='IKEv1; native ESP; IPv4; PSK authentication' ;;
+    4) expected_outer=udp4500; facts='IKEv1; UDP/4500; IPv4; forced encapsulation; PSK authentication' ;;
+    5) expected_outer=esp; facts='IKEv2; native ESP; IPv6; PSK authentication' ;;
+  esac
+  python3 "$ROOT/lab/scripts/pcap_info.py" "$tmp" --require-outer "$expected_outer" >/dev/null
+  tcpdump -nn -r "$tmp" 2>/dev/null | grep -q isakmp || {
+    echo "Protocol capture P$(printf '%02d' "$p") has no IKE packets." >&2
+    return 5
+  }
   mv "$tmp" "$out"
-  python3 "$ROOT/lab/scripts/record_capture.py" "$out" --label protocol_session --profile "$p" --role protocol_validation --generator ike-negotiation-and-esp --params '{"duration_s":8,"ike_before_traffic":true}'
+  python3 "$ROOT/lab/scripts/record_capture.py" "$out" --label protocol_session --profile "$p" --role protocol_validation --generator ike-negotiation-and-esp --params '{"duration_s":8,"ike_before_traffic":true}' --protocol-facts "$facts"
   completed=true
 }
 

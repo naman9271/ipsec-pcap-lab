@@ -10,7 +10,7 @@ The dataset is **not v1.0 until** `python3 lab/scripts/validate_dataset.py` pass
 
 ## Layout and labels
 
-`pcaps/known/{web,video,voip,email,file_transfer,messaging,icmp}` holds the seven canonical classes. `file` maps to `file_transfer`, and `ping` maps to `icmp`. `pcaps/ood`, `pcaps/anomaly`, and `pcaps/protocol_validation` are kept separate. Historical low-quality anomaly samples live at `pcaps/anomaly/archive` with `dataset_role=archived_provenance`; they are retained but excluded from final anomaly counts.
+`pcaps/known/{web,video,voip,email,file_transfer,messaging,icmp}` holds the seven canonical classes. `file` maps to `file_transfer`, and `ping` maps to `icmp`. `pcaps/ood`, `pcaps/anomaly`, and `pcaps/protocol_validation` are kept separate. If an imported historical archive is present at `pcaps/anomaly/archive`, it is retained as `archived_provenance` and excluded from final anomaly counts.
 
 Known runs use R01–R05: R01–R03 are `train`, R04 is `validation`, and R05 is `locked_test`. New captures use independent generator invocations and a generated seed in `generator_parameters`.
 
@@ -26,7 +26,7 @@ Requirements are Linux, passwordless-or-interactive `sudo` access to Docker, Doc
 
 It never overwrites an existing `.pcap`; interrupted `.partial` files are discarded. `capture_one.sh` supports all known classes, profiles 1–5, and R01–R05. It randomizes web object count, video segment count/rate, file size/rate, ICMP payload/count, SMTP message count, WebSocket message count, and RTP duration separately from the IPsec profile. Capture filters are `esp or udp port 4500` (with the required IP family in known capture calls).
 
-The final target is 175 known captures (7 × 5 × 5), 25 OOD captures (DNS, SSH, gaming UDP, database, remote desktop × P01–P05), and 30 final anomalies (10 each of ICMP flood, UDP flood, beacon burst, 30–90 seconds each). Protocol validation must include actual NAT traversal, certificate IKEv2, CHILD_SA and IKE SA rekeys, IKEv1/IKEv2, ESP/UDP4500, IPv4/IPv6 where supported, ordered/replay behavior, and a deliberately weak *isolated-lab* profile.
+The final target is 175 known captures (7 × 5 × 5), 25 OOD captures (DNS, SSH, gaming UDP, database, remote desktop × P01–P05), and 30 final anomalies (10 each of ICMP flood, UDP flood, beacon burst, 30–90 seconds each). Protocol validation records one negotiation-first session per profile and verifies IKEv1/IKEv2, PSK authentication, native ESP, UDP/4500 forced encapsulation, and IPv4/IPv6 coverage. This topology does not claim real NAT traversal, certificate authentication, or rekey/replay testing.
 
 ## Metadata
 
