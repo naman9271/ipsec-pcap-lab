@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-capture(){ local name=$1 label=$2 profile=$3 role=$4 anomaly=$5 cmd=$6; local out="$ROOT/pcaps/$role/${name}.pcap"; [[ ! -e "$out" ]] || return 0
+capture(){ local name=$1 label=$2 profile=$3 role=$4 anomaly=$5 cmd=$6; mkdir -p "$ROOT/pcaps/$role"; local out="$ROOT/pcaps/$role/${name}.pcap"; [[ ! -e "$out" ]] || return 0
   "$ROOT/lab/scripts/apply_profile.sh" "$profile" >/dev/null
   local idx veth pid; idx=$(sudo docker exec ipsec-left cat /sys/class/net/eth0/iflink); veth=$(ip -o link show | awk -F': ' -v i="$idx" '$1==i {split($2,a,"@");print a[1]}'); [[ -n "$veth" ]] || exit 4
   sudo tcpdump -U -i "$veth" -s 0 -w "$out" 'esp or udp port 4500' >/tmp/ipsec-eval-tcpdump.log 2>&1 & pid=$!

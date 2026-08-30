@@ -4,10 +4,26 @@ import csv, datetime as dt, json, platform, sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent)); from pcap_info import inspect
 FIELDS=['sample_id','pcap_file','traffic_class','mode','ike_version','ike_proposal','esp_proposal','cipher','integrity','dh_group','pfs','ip_version','nat_t','nat_t_forced','actual_nat_present','peer_auth','capture_duration_s','outer_left','outer_right','traffic_generator','sha256','original_label','canonical_label','dataset_role','profile_id','run_id','capture_timestamp_utc','configured_capture_duration_s','observed_packet_span_s','packet_count','captured_bytes','capture_interface','link_type','generator_parameters','strongswan_version','kernel_version','tcpdump_version','is_anomaly','anomaly_type']
+PROFILE_DETAILS={
+ 'P01':('aes128-sha256-modp2048','aes128-sha256','AES-128-CBC','HMAC-SHA256','14-MODP2048','off'),
+ 'P02':('aes256gcm16-prfsha256-ecp256','aes256gcm16','AES-256-GCM-16','AEAD-GCM-128-bit-ICV','19-ECP256','off'),
+ 'P03':('aes256-sha256-modp2048','aes256-sha256-modp2048','AES-256-CBC','HMAC-SHA256','14-MODP2048','on'),
+ 'P04':('aes128-sha256-modp3072','aes128-sha256-modp3072','AES-128-CBC','HMAC-SHA256','15-MODP3072','on'),
+ 'P05':('aes256-sha384-ecp384','aes256-sha384','AES-256-CBC','HMAC-SHA384','20-ECP384','off'),
+}
 root=Path(__file__).resolve().parents[2]; meta=root/'metadata.csv'
 with meta.open(newline='') as f: old=list(csv.DictReader(f))
 out=[]
 for r in old:
+ # Only the twenty root-level legacy names are migrated. All generated rows
+ # already contain measured data and must be preserved when a run resumes.
+ if not r.get('pcap_file','').startswith(('web_p','video_p','file_p','ping_p','pcaps/web_p','pcaps/video_p','pcaps/file_p','pcaps/ping_p')):
+  n={k:r.get(k,'') for k in FIELDS}
+  details=PROFILE_DETAILS.get(n.get('profile_id',''))
+  if details:
+   for key, value in zip(('ike_proposal','esp_proposal','cipher','integrity','dh_group','pfs'),details):
+    if not n.get(key): n[key]=value
+  out.append(n); continue
  name=r.get('pcap_file',''); path=root/'pcaps'/name if not name.startswith('pcaps/') else root/name
  if not path.exists(): raise SystemExit(f'legacy metadata references missing file: {name}')
  i=inspect(path); label={'file':'file_transfer','ping':'icmp'}.get(r.get('traffic_class'),r.get('traffic_class'))
