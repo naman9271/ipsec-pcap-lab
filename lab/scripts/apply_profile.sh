@@ -8,7 +8,7 @@ PSK='IPsec-ML-Lab-PSK-2026-DoNotReuse'
 for c in ipsec-left ipsec-right; do
   sudo docker cp "$CONF" "$c:/etc/ipsec.conf"
   printf '%s\n' "@left @right : PSK \"$PSK\"" | sudo docker exec -i "$c" sh -c 'cat >/etc/ipsec.secrets && chmod 600 /etc/ipsec.secrets'
-  sudo docker exec "$c" pkill -f 'aiosmtpd|websocket' >/dev/null 2>&1 || true
+  sudo docker exec "$c" pkill -f 'aiosmtpd|smtp_server.py|websocket' >/dev/null 2>&1 || true
 done
 sudo docker exec ipsec-left ipsec stop >/dev/null 2>&1 || true
 sudo docker exec ipsec-right ipsec stop >/dev/null 2>&1 || true
