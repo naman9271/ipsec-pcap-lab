@@ -26,7 +26,7 @@ def run_from(value, role):
     return 'R01'
 
 def role_for(path, old):
-    if 'anomaly/archive' in path.as_posix(): return 'archived_provenance'
+    if 'anomaly/archive' in path.as_posix() or 'ood/archive' in path.as_posix(): return 'archived_provenance'
     if old in {'train_known', 'ood_eval', 'anomaly_eval', 'protocol_validation', 'archived_provenance'}: return old
     return {'ood':'ood_eval', 'anomaly':'anomaly_eval', 'protocol_validation':'protocol_validation'}.get(path.parts[1] if len(path.parts)>1 else '', 'train_known')
 
@@ -36,6 +36,8 @@ by_path = {r.get('pcap_path') or r.get('pcap_file'): r for r in old_rows}
 out = []
 for p in sorted(ROOT.glob('pcaps/**/*.pcap')):
     rel = p.relative_to(ROOT).as_posix()
+    # Interrupted captures are retained for audit only and are not dataset rows.
+    if '/incomplete/' in rel: continue
     old = by_path.get(rel, {})
     # Allow migration after organized legacy files were moved.
     if not old:
@@ -66,6 +68,8 @@ for p in sorted(ROOT.glob('pcaps/**/*.pcap')):
     except json.JSONDecodeError: raise SystemExit(f'{rel}: generator_parameters is not JSON')
     if not row['actual_nat_present']: row['actual_nat_present'] = 'no'
     if not row['is_anomaly']: row['is_anomaly'] = 'true' if role == 'anomaly_eval' else 'false'
+    if role == 'anomaly_eval' and row['anomaly_type'] in {'', 'none'}:
+        row['anomaly_type'] = next((t for t in ('icmp_flood','udp_flood','beacon_burst') if p.name.startswith(t)), 'none')
     if not row['anomaly_type']: row['anomaly_type'] = 'none'
     if not row['capture_interface']: row['capture_interface'] = 'legacy-host-veth'
     out.append(row)

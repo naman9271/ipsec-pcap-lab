@@ -36,7 +36,7 @@ Known training labels are `web`, `video`, `voip`, `email`, `file_transfer`, `mes
 
 Each known class/profile has R01 and R02. Repetitions are separate generator invocations with a fresh seed. Web objects, HLS segments/rate, file size/rate, ICMP count/payload, SMTP messages/attachments, WebSocket messages, and RTP duration vary independently from the profile. SMTP uses a local `aiosmtpd` server; messaging is bidirectional WebSockets; VoIP is bidirectional ffmpeg RTP audio.
 
-`pcaps/ood/` holds DNS-like UDP, interactive terminal-like TCP, and gaming-like UDP evaluation flows. These rows use `dataset_role=ood_eval` and `canonical_label=IGNORE`. `pcaps/anomaly/` separately contains isolated ICMP/UDP flood and beacon-then-burst captures, marked `anomaly_eval` with `is_anomaly=true`. `pcaps/protocol_validation/` contains negotiation-first IKE/ESP sessions for each profile, excluded from classifier training.
+`pcaps/ood/` holds DNS-like UDP, interactive terminal-like TCP, and gaming-like UDP evaluation flows. These rows use `dataset_role=ood_eval` and `canonical_label=IGNORE`. `pcaps/anomaly/` separately contains isolated ICMP/UDP flood and beacon-then-burst captures, marked `anomaly_eval` with `is_anomaly=true`. Use `lab/scripts/reset_anomalies.sh` for a clean anomaly-only reset, then `lab/scripts/capture_anomaly.sh TYPE PROFILE RUN` for one fail-fast sample. `pcaps/protocol_validation/` contains negotiation-first IKE/ESP sessions for each profile, excluded from classifier training.
 
 ## Metadata and validation
 

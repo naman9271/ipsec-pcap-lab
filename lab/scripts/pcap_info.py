@@ -2,6 +2,7 @@
 """Small dependency-free reader for classic libpcap captures."""
 import hashlib, struct
 import datetime as dt
+import argparse, json
 from pathlib import Path
 
 def inspect(path):
@@ -42,3 +43,17 @@ def inspect(path):
         'link_type': linktype, 'esp_packets': esp, 'udp4500_packets': natt,
         'sha256': hashlib.sha256(data).hexdigest(),
     }
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('pcap')
+    parser.add_argument('--require-outer', choices=('esp', 'udp4500'))
+    args = parser.parse_args()
+    result = inspect(args.pcap)
+    if result['packet_count'] == 0:
+        raise SystemExit('capture contains no packets')
+    if args.require_outer == 'esp' and result['esp_packets'] == 0:
+        raise SystemExit('capture contains no ESP packets')
+    if args.require_outer == 'udp4500' and result['udp4500_packets'] == 0:
+        raise SystemExit('capture contains no UDP/4500 packets')
+    print(json.dumps(result, sort_keys=True))

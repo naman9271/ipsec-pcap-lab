@@ -67,6 +67,7 @@ for r in rows:
         protocols.append(r)
         if r.get('run_id') in {'','N/A'}: bad(sid,'protocol run ID','populated identifier',r.get('run_id',''))
 for p in ROOT.glob('pcaps/**/*.pcap'):
+    if '/incomplete/' in p.relative_to(ROOT).as_posix(): continue
     if p.relative_to(ROOT).as_posix() not in listed: bad(p.name,'metadata','one metadata row','none')
 
 for label in LABELS:

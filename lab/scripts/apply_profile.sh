@@ -10,11 +10,21 @@ for c in ipsec-left ipsec-right; do
   printf '%s\n' "@left @right : PSK \"$PSK\"" | sudo docker exec -i "$c" sh -c 'cat >/etc/ipsec.secrets && chmod 600 /etc/ipsec.secrets'
   sudo docker exec "$c" pkill -f 'aiosmtpd|smtp_server.py|websocket' >/dev/null 2>&1 || true
 done
-sudo docker exec ipsec-left ipsec stop >/dev/null 2>&1 || true
-sudo docker exec ipsec-right ipsec stop >/dev/null 2>&1 || true
-sleep 1; sudo docker exec ipsec-right ipsec start; sleep 1; sudo docker exec ipsec-left ipsec start; sleep 2
-sudo docker exec ipsec-left ipsec up lab || true
+for c in ipsec-left ipsec-right; do
+  sudo docker exec "$c" ipsec stop >/dev/null 2>&1 || true
+done
+# A stopped daemon can leave its PID/socket files behind after an interrupted
+# capture.  Remove only those runtime files before starting one clean daemon.
+for c in ipsec-left ipsec-right; do
+  sudo docker exec "$c" sh -c 'rm -f /run/charon.pid /var/run/charon.pid /run/charon.ctl /var/run/charon.ctl'
+done
+sleep 1
+sudo docker exec ipsec-right ipsec start >/dev/null
+sleep 1
+sudo docker exec ipsec-left ipsec start >/dev/null
+sleep 2
 for _ in $(seq 1 10); do
+  sudo docker exec ipsec-left ipsec up lab >/dev/null 2>&1 || true
   if sudo docker exec ipsec-left ipsec statusall | grep -q 'INSTALLED'; then
     sudo docker exec ipsec-left ipsec statusall
     exit 0
